@@ -14,11 +14,12 @@ public static class Config
             new IdentityResource(){ Name = "verification", UserClaims= new List<string>
             {  JwtClaimTypes.Email, JwtClaimTypes.EmailVerified }
             }
+
         };
 
     public static IEnumerable<ApiScope> ApiScopes =>
         new ApiScope[]
-            { };
+            { new ApiScope("api1") };
 
     public static IEnumerable<Client> Clients =>
      new List<Client>
@@ -49,6 +50,8 @@ public static class Config
             // where to redirect to after login
             RedirectUris = { "https://localhost:5002/signin-oidc" },
 
+            AllowOfflineAccess=true,
+
             // where to redirect to after logout
             PostLogoutRedirectUris = { "https://localhost:5002/signout-callback-oidc" },
 
@@ -56,7 +59,8 @@ public static class Config
             {
                 IdentityServerConstants.StandardScopes.OpenId,
                 IdentityServerConstants.StandardScopes.Profile,
-                "verification"
+                "verification",
+                "api1"
             }
         }
      };
