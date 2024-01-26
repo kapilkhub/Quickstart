@@ -1,3 +1,4 @@
+using Microsoft.AspNetCore.Authentication;
 using System.IdentityModel.Tokens.Jwt;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -12,21 +13,24 @@ builder.Services.AddAuthentication(options =>
 {
 	options.DefaultScheme = "Cookies";
 	options.DefaultChallengeScheme = "oidc";
-})
-	.AddCookie("Cookies")
-	.AddOpenIdConnect("oidc", options =>
+}).AddCookie("Cookies", options =>
+{
+		options.Cookie.Name = "demo";
+		options.ExpireTimeSpan = TimeSpan.FromHours(8);
+}).AddOpenIdConnect("oidc", options =>
 	{
 		options.Authority = "https://localhost:5001";
-
 		options.ClientId = "web";
 		options.ClientSecret = "secret";
 		options.ResponseType = "code";
-
 		options.Scope.Clear();
 		options.Scope.Add("openid");
 		options.Scope.Add("profile");
+		options.Scope.Add("verification");
+		options.GetClaimsFromUserInfoEndpoint = true;
+        options.ClaimActions.MapJsonKey("email_verified", "email_verified");
 
-		options.SaveTokens = true;
+        options.SaveTokens = true;
 	});
 
 var app = builder.Build();
@@ -34,18 +38,18 @@ var app = builder.Build();
 // Configure the HTTP request pipeline.
 if (!app.Environment.IsDevelopment())
 {
-    app.UseExceptionHandler("/Error");
-    // The default HSTS value is 30 days. You may want to change this for production scenarios, see https://aka.ms/aspnetcore-hsts.
-    app.UseHsts();
+	app.UseExceptionHandler("/Error");
+	// The default HSTS value is 30 days. You may want to change this for production scenarios, see https://aka.ms/aspnetcore-hsts.
+	app.UseHsts();
 }
 
 app.UseHttpsRedirection();
 app.UseStaticFiles();
 
 app.UseRouting();
-
+app.UseAuthentication();
 app.UseAuthorization();
 
-app.MapRazorPages();
+app.MapRazorPages().RequireAuthorization();
 
 app.Run();
