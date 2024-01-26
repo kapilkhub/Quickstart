@@ -55,10 +55,11 @@ internal static class HostingExtensions
                 // register your IdentityServer with Google at https://console.developers.google.com
                 // enable the Google+ API
                 // set the redirect URI to https://localhost:5001/signin-google
-                options.ClientId = "copy client ID from Google here";
-                options.ClientSecret = "copy client secret from Google here";
+#pragma warning disable CS8601 // Possible null reference assignment.
+                options.ClientId = builder.Configuration["Authentication:Google:ClientId"];
+#pragma warning restore CS8601 // Possible null reference assignment.
+                options.ClientSecret = builder.Configuration["Authentication:Google:ClientSecret"];
             });
-
         return builder.Build();
     }
     
@@ -70,9 +71,7 @@ internal static class HostingExtensions
         {
             app.UseDeveloperExceptionPage();
         }
-        InitializeDatabase(app);
-
-
+      
         app.UseStaticFiles();
         app.UseRouting();
         app.UseIdentityServer();
@@ -84,41 +83,6 @@ internal static class HostingExtensions
         return app;
     }
 
-    private static void InitializeDatabase(IApplicationBuilder app)
-    {
-        using (var serviceScope = app.ApplicationServices.GetService<IServiceScopeFactory>().CreateScope())
-        {
-            serviceScope.ServiceProvider.GetRequiredService<PersistedGrantDbContext>().Database.Migrate();
-
-            var context = serviceScope.ServiceProvider.GetRequiredService<ConfigurationDbContext>();
-            context.Database.Migrate();
-            if (!context.Clients.Any())
-            {
-                foreach (var client in Config.Clients)
-                {
-                    context.Clients.Add(client.ToEntity());
-                }
-                context.SaveChanges();
-            }
-
-            if (!context.IdentityResources.Any())
-            {
-                foreach (var resource in Config.IdentityResources)
-                {
-                    context.IdentityResources.Add(resource.ToEntity());
-                }
-                context.SaveChanges();
-            }
-
-            if (!context.ApiScopes.Any())
-            {
-                foreach (var resource in Config.ApiScopes)
-                {
-                    context.ApiScopes.Add(resource.ToEntity());
-                }
-                context.SaveChanges();
-            }
-        }
-    }
+  
 
 }
