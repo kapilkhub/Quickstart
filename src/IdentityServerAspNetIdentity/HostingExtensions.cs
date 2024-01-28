@@ -27,6 +27,7 @@ internal static class HostingExtensions
         builder.Services
             .AddIdentityServer(options =>
             {
+                
                 options.Events.RaiseErrorEvents = true;
                 options.Events.RaiseInformationEvents = true;
                 options.Events.RaiseFailureEvents = true;
@@ -46,7 +47,9 @@ internal static class HostingExtensions
                 sql => sql.MigrationsAssembly(migrationsAssembly));
                })
             .AddAspNetIdentity<ApplicationUser>();
-        
+
+        builder.Services.AddScoped<IUserClaimsPrincipalFactory<ApplicationUser>, AdditionalUserClaimsPrincipalFactory>();
+
         builder.Services.AddAuthentication()
             .AddGoogle(options =>
             {

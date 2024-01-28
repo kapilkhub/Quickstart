@@ -65,6 +65,14 @@ public class Index : PageModel
         // check if we are in the context of an authorization request
         var context = await _interaction.GetAuthorizationContextAsync(Input.ReturnUrl);
 
+        var requires2Fa = context?.AcrValues.Count(t => t.Contains("mfa")) >= 1;
+
+        var user = await _userManager.FindByNameAsync(Input.Username);
+        if (user != null && !user.TwoFactorEnabled && requires2Fa)
+        {
+            return RedirectToPage("/Home/ErrorEnable2FA/Index");
+        }
+
         // the user clicked the "cancel" button
         if (Input.Button != "login")
         {
@@ -100,7 +108,7 @@ public class Index : PageModel
             var result = await _signInManager.PasswordSignInAsync(Input.Username!, Input.Password!, Input.RememberLogin, lockoutOnFailure: true);
             if (result.Succeeded)
             {
-                var user = await _userManager.FindByNameAsync(Input.Username!);
+                user = await _userManager.FindByNameAsync(Input.Username!);
                 await _events.RaiseAsync(new UserLoginSuccessEvent(user!.UserName, user.Id, user.UserName, clientId: context?.Client.ClientId));
                 Telemetry.Metrics.UserLogin(context?.Client.ClientId, IdentityServerConstants.LocalIdentityProvider);
 
@@ -134,6 +142,11 @@ public class Index : PageModel
                     // user might have clicked on a malicious link - should be logged
                     throw new ArgumentException("invalid return URL");
                 }
+            }
+
+            if (result.RequiresTwoFactor)
+            {
+                return RedirectToPage("/Account/LoginWith2fa", new { area = "Identity", Input.ReturnUrl, RememberMe = Input.RememberLogin });
             }
 
             const string error = "invalid credentials";
