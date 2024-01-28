@@ -1,4 +1,5 @@
 using Microsoft.AspNetCore.Authentication;
+using Microsoft.AspNetCore.Authentication.OpenIdConnect;
 using System.IdentityModel.Tokens.Jwt;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -32,7 +33,15 @@ builder.Services.AddAuthentication(options =>
         options.Scope.Add("api1");
         options.Scope.Add("offline_access");
         options.SaveTokens = true;
-	});
+		options.Events = new OpenIdConnectEvents
+        {
+            OnRedirectToIdentityProvider = context =>
+            {
+                context.ProtocolMessage.SetParameter("acr_values", "mfa");
+                return Task.FromResult(0);
+            }
+        };
+    });
 
 var app = builder.Build();
 
